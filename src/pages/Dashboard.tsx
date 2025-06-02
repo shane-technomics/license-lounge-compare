@@ -2,24 +2,35 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { ArrowLeft, Edit3, Save, X, Plus, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { BarChart3, DollarSign, TrendingUp, Users, Edit3, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+interface Program {
+  id: number;
+  name: string;
+  description: string;
+  users: number;
+  monthlyCost: number;
+  category: string;
+  color: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  
-  const [programs, setPrograms] = useState([
+  const [editingProgram, setEditingProgram] = useState<number | null>(null);
+
+  const [programs, setPrograms] = useState<Program[]>([
     {
       id: 1,
       name: "Adobe Creative Suite",
       description: "Design and creative tools",
       users: 150,
       monthlyCost: 52.99,
-      category: "Design"
+      category: "Design",
+      color: "bg-gradient-to-br from-red-500 to-pink-600"
     },
     {
       id: 2,
@@ -27,7 +38,8 @@ const Dashboard = () => {
       description: "Productivity and collaboration",
       users: 320,
       monthlyCost: 22.00,
-      category: "Productivity"
+      category: "Productivity",
+      color: "bg-gradient-to-br from-blue-500 to-blue-700"
     },
     {
       id: 3,
@@ -35,7 +47,8 @@ const Dashboard = () => {
       description: "Customer relationship management",
       users: 85,
       monthlyCost: 165.00,
-      category: "CRM"
+      category: "CRM",
+      color: "bg-gradient-to-br from-cyan-500 to-blue-600"
     },
     {
       id: 4,
@@ -43,7 +56,8 @@ const Dashboard = () => {
       description: "Team communication platform",
       users: 280,
       monthlyCost: 15.00,
-      category: "Communication"
+      category: "Communication",
+      color: "bg-gradient-to-br from-purple-500 to-indigo-600"
     },
     {
       id: 5,
@@ -51,7 +65,8 @@ const Dashboard = () => {
       description: "Video conferencing solution",
       users: 200,
       monthlyCost: 19.99,
-      category: "Communication"
+      category: "Communication",
+      color: "bg-gradient-to-br from-green-500 to-emerald-600"
     },
     {
       id: 6,
@@ -59,71 +74,52 @@ const Dashboard = () => {
       description: "Collaborative design platform",
       users: 45,
       monthlyCost: 45.00,
-      category: "Design"
+      category: "Design",
+      color: "bg-gradient-to-br from-orange-500 to-red-600"
     }
   ]);
 
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newProgram, setNewProgram] = useState({
-    name: "",
-    description: "",
-    users: 0,
-    monthlyCost: 0,
-    category: ""
-  });
+  const totalMonthlyCost = programs.reduce((sum, program) => sum + (program.monthlyCost * program.users), 0);
+  const totalUsers = programs.reduce((sum, program) => sum + program.users, 0);
 
   const chartData = programs.map(program => ({
-    name: program.name.split(' ')[0], // Shortened names for chart
-    totalCost: program.monthlyCost * program.users,
-    perUser: program.monthlyCost,
-    users: program.users
+    name: program.name,
+    cost: program.monthlyCost * program.users,
+    users: program.users,
+    costPerUser: program.monthlyCost
   }));
 
-  const categoryData = programs.reduce((acc, program) => {
-    const existing = acc.find(item => item.name === program.category);
-    if (existing) {
-      existing.value += program.monthlyCost * program.users;
-    } else {
-      acc.push({
-        name: program.category,
-        value: program.monthlyCost * program.users
-      });
-    }
-    return acc;
-  }, []);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
-  const startEdit = (program) => {
-    setEditingId(program.id);
-    setEditForm({ ...program });
+  const handleEdit = (programId: number) => {
+    setEditingProgram(programId);
   };
 
-  const saveEdit = () => {
-    setPrograms(programs.map(p => p.id === editingId ? editForm : p));
-    setEditingId(null);
-    setEditForm({});
+  const handleSave = (programId: number) => {
+    setEditingProgram(null);
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditForm({});
+  const handleCancel = () => {
+    setEditingProgram(null);
+  };
+
+  const updateProgram = (id: number, field: keyof Program, value: string | number) => {
+    setPrograms(programs.map(program => 
+      program.id === id ? { ...program, [field]: value } : program
+    ));
   };
 
   const addNewProgram = () => {
-    const id = Math.max(...programs.map(p => p.id)) + 1;
-    setPrograms([...programs, { ...newProgram, id }]);
-    setNewProgram({ name: "", description: "", users: 0, monthlyCost: 0, category: "" });
-    setIsAddingNew(false);
+    const newProgram: Program = {
+      id: Date.now(),
+      name: "New Program",
+      description: "Enter description",
+      users: 0,
+      monthlyCost: 0,
+      category: "Other",
+      color: "bg-gradient-to-br from-gray-500 to-gray-600"
+    };
+    setPrograms([...programs, newProgram]);
+    setEditingProgram(newProgram.id);
   };
-
-  const deleteProgram = (id) => {
-    setPrograms(programs.filter(p => p.id !== id));
-  };
-
-  const totalMonthlyCost = programs.reduce((sum, program) => sum + (program.monthlyCost * program.users), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -131,253 +127,195 @@ const Dashboard = () => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate('/')}
-                className="hover:bg-gray-100"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Overview
-              </Button>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">License Cost Dashboard</h1>
-                <p className="text-sm text-gray-500">Compare and manage program costs</p>
+                <h1 className="text-2xl font-bold text-gray-900">LicenseCost Dashboard</h1>
+                <p className="text-sm text-gray-500">Manage and compare license costs</p>
               </div>
             </div>
-            <Button 
-              onClick={() => setIsAddingNew(true)}
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Program
-            </Button>
+            <div className="flex space-x-3">
+              <Button 
+                onClick={addNewProgram}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              >
+                Add Program
+              </Button>
+              <Button 
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="hover:bg-blue-50"
+              >
+                Back to Home
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle>Total Monthly Costs by Program</CardTitle>
-              <CardDescription>Compare total spending across all programs</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Monthly Cost</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total Cost']} />
-                  <Bar dataKey="totalCost" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="text-2xl font-bold">${totalMonthlyCost.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                ${(totalMonthlyCost * 12).toLocaleString()} annually
+              </p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle>Cost Distribution by Category</CardTitle>
-              <CardDescription>Breakdown of costs by program category</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total Cost']} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="text-2xl font-bold">{totalUsers.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                Across {programs.length} programs
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Cost per User</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${(totalMonthlyCost / totalUsers).toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                Per user per month
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Add New Program Form */}
-        {isAddingNew && (
-          <Card className="mb-8 border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-800">Add New Program</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                  <Label htmlFor="new-name">Program Name</Label>
-                  <Input
-                    id="new-name"
-                    value={newProgram.name}
-                    onChange={(e) => setNewProgram({...newProgram, name: e.target.value})}
-                    placeholder="Enter program name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-description">Description</Label>
-                  <Input
-                    id="new-description"
-                    value={newProgram.description}
-                    onChange={(e) => setNewProgram({...newProgram, description: e.target.value})}
-                    placeholder="Brief description"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-category">Category</Label>
-                  <Input
-                    id="new-category"
-                    value={newProgram.category}
-                    onChange={(e) => setNewProgram({...newProgram, category: e.target.value})}
-                    placeholder="e.g. Design, CRM"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-users">Users</Label>
-                  <Input
-                    id="new-users"
-                    type="number"
-                    value={newProgram.users}
-                    onChange={(e) => setNewProgram({...newProgram, users: parseInt(e.target.value) || 0})}
-                    placeholder="Number of users"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-cost">Monthly Cost/User</Label>
-                  <Input
-                    id="new-cost"
-                    type="number"
-                    step="0.01"
-                    value={newProgram.monthlyCost}
-                    onChange={(e) => setNewProgram({...newProgram, monthlyCost: parseFloat(e.target.value) || 0})}
-                    placeholder="Cost per user"
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-2 mt-4">
-                <Button onClick={addNewProgram} className="bg-green-600 hover:bg-green-700">
-                  <Save className="h-4 w-4 mr-2" />
-                  Add Program
-                </Button>
-                <Button variant="outline" onClick={() => setIsAddingNew(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Programs Table */}
-        <Card>
+        {/* Chart */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Program Details</CardTitle>
-            <CardDescription>
-              Total Monthly Cost: <span className="text-2xl font-bold text-blue-600">${totalMonthlyCost.toLocaleString()}</span>
-            </CardDescription>
+            <CardTitle>Cost Comparison</CardTitle>
+            <CardDescription>Monthly costs by program</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {programs.map((program) => (
-                <div key={program.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  {editingId === program.id ? (
-                    // Edit Mode
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                      <div>
-                        <Label>Name</Label>
-                        <Input
-                          value={editForm.name}
-                          onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label>Description</Label>
-                        <Input
-                          value={editForm.description}
-                          onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label>Category</Label>
-                        <Input
-                          value={editForm.category}
-                          onChange={(e) => setEditForm({...editForm, category: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label>Users</Label>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="cost" fill="#3B82F6" name="Total Monthly Cost" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Programs Grid */}
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">License Programs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.map((program) => (
+              <Card key={program.id} className="hover:shadow-xl transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className={`p-3 rounded-lg ${program.color} mb-3`}>
+                      <BarChart3 className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex space-x-2">
+                      {editingProgram === program.id ? (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleSave(program.id)}>
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancel}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(program.id)}>
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {editingProgram === program.id ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={program.name}
+                        onChange={(e) => updateProgram(program.id, 'name', e.target.value)}
+                        className="font-semibold"
+                      />
+                      <Input
+                        value={program.description}
+                        onChange={(e) => updateProgram(program.id, 'description', e.target.value)}
+                        className="text-sm"
+                      />
+                      <Input
+                        value={program.category}
+                        onChange={(e) => updateProgram(program.id, 'category', e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <CardTitle className="text-xl">{program.name}</CardTitle>
+                      <CardDescription className="text-sm">{program.description}</CardDescription>
+                      <Badge variant="secondary">{program.category}</Badge>
+                    </>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Active users</span>
+                      {editingProgram === program.id ? (
                         <Input
                           type="number"
-                          value={editForm.users}
-                          onChange={(e) => setEditForm({...editForm, users: parseInt(e.target.value)})}
+                          value={program.users}
+                          onChange={(e) => updateProgram(program.id, 'users', parseInt(e.target.value) || 0)}
+                          className="w-20 h-8 text-right"
                         />
-                      </div>
-                      <div>
-                        <Label>Cost/User</Label>
+                      ) : (
+                        <span className="font-semibold">{program.users}</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Monthly per user</span>
+                      {editingProgram === program.id ? (
                         <Input
                           type="number"
                           step="0.01"
-                          value={editForm.monthlyCost}
-                          onChange={(e) => setEditForm({...editForm, monthlyCost: parseFloat(e.target.value)})}
+                          value={program.monthlyCost}
+                          onChange={(e) => updateProgram(program.id, 'monthlyCost', parseFloat(e.target.value) || 0)}
+                          className="w-24 h-8 text-right"
                         />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button size="sm" onClick={saveEdit}>
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEdit}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                      ) : (
+                        <span className="font-semibold">${program.monthlyCost}</span>
+                      )}
+                    </div>
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Total monthly cost</span>
+                        <span className="text-lg font-bold text-blue-600">
+                          ${(program.monthlyCost * program.users).toLocaleString()}
+                        </span>
                       </div>
                     </div>
-                  ) : (
-                    // View Mode
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <div>
-                          <div className="font-semibold">{program.name}</div>
-                          <div className="text-sm text-gray-500">{program.description}</div>
-                        </div>
-                        <div className="text-center">
-                          <Badge variant="secondary">{program.category}</Badge>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-semibold">{program.users}</div>
-                          <div className="text-sm text-gray-500">users</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-semibold">${program.monthlyCost}</div>
-                          <div className="text-sm text-gray-500">per user</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-bold text-blue-600">${(program.monthlyCost * program.users).toLocaleString()}</div>
-                          <div className="text-sm text-gray-500">total monthly</div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2 ml-4">
-                        <Button size="sm" variant="outline" onClick={() => startEdit(program)}>
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => deleteProgram(program.id)} className="text-red-600 hover:bg-red-50">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
