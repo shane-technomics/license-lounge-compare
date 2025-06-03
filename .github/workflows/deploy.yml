@@ -1,3 +1,4 @@
+
 name: Deploy to GitHub Pages
 
 on:
@@ -36,7 +37,7 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        NODE_ENV: production # Vite uses this, and also its 'mode' concept
+        NODE_ENV: production
 
     # New step to handle SPA routing on GitHub Pages
     - name: Prepare 404.html for SPA fallback
