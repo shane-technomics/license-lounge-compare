@@ -39,9 +39,11 @@ jobs:
       env:
         NODE_ENV: production
 
-    # New step to handle SPA routing on GitHub Pages
     - name: Prepare 404.html for SPA fallback
       run: cp dist/index.html dist/404.html
+
+    - name: List dist contents for debugging
+      run: ls -la dist/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
